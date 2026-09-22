@@ -7,8 +7,8 @@ router.use(requireAuth);
 
 router.get('/', userController.listUsers);
 router.get('/:id', userController.getUser);
-router.post('/', requireRole('admin', 'manager'), userController.createUser);
-router.put('/:id', requireRole('admin', 'manager'), userController.updateUser);
+router.post('/', requireRole('admin'), userController.createUser);
+router.put('/:id', requireRole('admin'), userController.updateUser);
 router.delete('/:id', requireRole('admin'), userController.deleteUser);
 
 module.exports = router;
