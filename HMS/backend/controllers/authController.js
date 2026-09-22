@@ -2,19 +2,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'hms-dev-secret-change-me-in-production';
 const AVATAR_COLORS = ['#4F46E5', '#0EA5E9', '#16A34A', '#D97706', '#DB2777', '#7C3AED'];
 
 function signToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 }
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role: rawRole = 'patient' } = req.body;
+    const requestedRole = String(rawRole).trim().toLowerCase();
+    const allowedRoles = ['patient', 'doctor', 'receptionist', 'nurse', 'pharmacist', 'lab_technician', 'billing'];
+    if (!allowedRoles.includes(requestedRole)) {
+      return res.status(400).json({ message: `Role must be one of: ${allowedRoles.join(', ')}` });
+    }
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
@@ -27,9 +33,8 @@ exports.register = async (req, res) => {
       return res.status(409).json({ message: 'An account with this email already exists' });
     }
 
-    // First registered user becomes admin automatically
     const [countRows] = await pool.query('SELECT COUNT(*) AS count FROM users');
-    const role = countRows[0].count === 0 ? 'admin' : 'staff';
+    const role = countRows[0].count === 0 ? 'admin' : requestedRole;
     const avatarColor = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
 
     const hashed = await bcrypt.hash(password, 10);
@@ -39,12 +44,23 @@ exports.register = async (req, res) => {
     );
 
     const user = { id: result.insertId, name, email, role };
+    if (role === 'patient') {
+      const medicalRecordNo = `MR-${String(result.insertId).padStart(6, '0')}`;
+      await pool.query(
+        'INSERT INTO patients (user_id, medical_record_no) VALUES (?, ?)',
+        [result.insertId, medicalRecordNo]
+      );
+    }
     const token = signToken(user);
 
     res.status(201).json({ token, user });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error during registration' });
+    console.error('Registration error:', err);
+    res.status(500).json({
+      message: process.env.NODE_ENV === 'production'
+        ? 'Server error during registration'
+        : `Registration failed: ${err.message}`,
+    });
   }
 };
 
