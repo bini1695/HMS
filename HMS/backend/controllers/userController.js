@@ -70,7 +70,11 @@ exports.getUser = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role = 'staff', status = 'active' } = req.body;
+    const { name, email, password, role = 'patient', status = 'active' } = req.body;
+    const allowedRoles = ['admin', 'doctor', 'patient', 'receptionist', 'nurse', 'pharmacist', 'lab_technician', 'billing'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: `Role must be one of: ${allowedRoles.join(', ')}` });
+    }
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
