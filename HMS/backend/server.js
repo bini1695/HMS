@@ -22,6 +22,10 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api/lab-orders', require('./routes/labOrders'));
+app.use('/api/lab-tests', require('./routes/labTests'));
+// (patients route already exists if you have /api/patients)
+
 
 // Healthcheck route
 app.get('/api/health', (req, res) => {
