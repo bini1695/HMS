@@ -1,3 +1,4 @@
+// src/components/Sidebar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -5,13 +6,18 @@ import './Sidebar.css';
 
 export default function Sidebar() {
   const { user } = useAuth();
-  const navItems = user?.role === 'admin'
-    ? [
-        { to: '/', label: 'Admin dashboard', icon: '⬛', end: true },
-        { to: '/users', label: 'Users & roles', icon: '👤' },
-        { to: '/appointments', label: 'Appointments', icon: '◷' },
-      ]
-    : user?.role === 'patient'
+
+  // Build nav items based on role
+  const navItems =
+    user?.role === 'admin'
+      ? [
+          { to: '/', label: 'Admin dashboard', icon: '⬛', end: true },
+          { to: '/users', label: 'Users & roles', icon: '👤' },
+          { to: '/appointments', label: 'Appointments', icon: '◷' },
+          { to: '/lab-orders', label: 'Lab Orders', icon: '🧪' },
+          { to: '/pharmacy', label: 'Pharmacy', icon: '💊' },
+        ]
+      : user?.role === 'patient'
       ? [
           { to: '/portal', label: 'My health portal', icon: '♡' },
           { to: '/appointments', label: 'Appointment schedule', icon: '◷' },
@@ -22,8 +28,30 @@ export default function Sidebar() {
           { to: '/patients', label: 'Patient history', icon: '♙' },
           { to: '/appointments', label: 'Appointments', icon: '◷' },
           { to: '/workspace', label: 'Clinical tools', icon: '▦' },
+          { to: '/lab-orders', label: 'Lab Orders', icon: '🧪' },
         ]
-      : [{ to: '/workspace', label: 'Role workspace', icon: '▦' }, { to: '/appointments', label: 'Appointments', icon: '◷' }];
+      : user?.role === 'pharmacist'
+      ? [
+          { to: '/pharmacy', label: 'Prescriptions', icon: '💊' },
+          { to: '/appointments', label: 'Appointments', icon: '◷' },
+        ]
+      : user?.role === 'lab_technician'
+      ? [
+          { to: '/lab-orders', label: 'Lab Orders', icon: '🧪' },
+          { to: '/appointments', label: 'Appointments', icon: '◷' },
+        ]
+      : user?.role === 'nurse'
+      ? [
+          { to: '/patients', label: 'Patients', icon: '♙' },
+          { to: '/lab-orders', label: 'Lab Orders', icon: '🧪' },
+          { to: '/appointments', label: 'Appointments', icon: '◷' },
+          { to: '/workspace', label: 'Clinical tools', icon: '▦' },
+        ]
+      : [
+          // fallback for receptionist, billing, or unknown roles
+          { to: '/workspace', label: 'Role workspace', icon: '▦' },
+          { to: '/appointments', label: 'Appointments', icon: '◷' },
+        ];
 
   return (
     <aside className="sidebar">
